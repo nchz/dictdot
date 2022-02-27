@@ -5,7 +5,7 @@ with open("README.md") as f:
 
 setup(
     name="dictdot",
-    version="1.0.0",
+    version="1.0.1",
     author="nchz",
     url="https://github.com/nchz/dictdot",
     description="Python dict accessible by dot.",

@@ -21,12 +21,12 @@ assert hasattr(d.items, "__call__")
 # d["no_valid_key"] will raise KeyError, but
 assert d.no_valid_key is None
 
-# may delete by attr name.
+# delete by attribute name.
 del d.b
 assert "b" not in d.keys()
 
 # `copy` method will return a regular dict.
 d2 = d.copy()
-assert type(d) != type(d2)
-assert "b" not in d2.keys()
+assert type(d2) != type(d)
+assert type(d2) is dict
 ```
