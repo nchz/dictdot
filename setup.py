@@ -1,14 +1,15 @@
 from setuptools import setup, find_packages
+import dictdot
 
-with open("README.md") as f:
-    long_description = f.read()
+description = dictdot.__doc__
+long_description = description + "\n\n" + dictdot.dictdot.__doc__
 
 setup(
     name="dictdot",
-    version="1.2.0",
+    version="1.3.0",
     author="nchz",
     url="https://github.com/nchz/dictdot",
-    description="Python dict accessible by dot.",
+    description=description,
     long_description=long_description,
     long_description_content_type="text/markdown",
     python_requires=">=3.7",
