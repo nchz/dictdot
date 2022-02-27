@@ -1,15 +1,14 @@
 class dictdot(dict):
     """A dict accessible by dot."""
+
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-    def __init__(self, dic, recursive=True):
-        """Convert `dic` to `dictdot` (nested dicts too if `recursive`)."""
-        self.update(**dic)
-        if recursive:
-            for k, v in self.items():
-                self[k] = self._nest(v)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for k, v in self.items():
+            self[k] = self._nest(v)
 
     def _nest(self, value):
         if type(value) is dict:
