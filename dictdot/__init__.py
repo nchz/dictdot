@@ -17,3 +17,6 @@ class dictdot(dict):
             return [self._nest(v) for v in value]
         else:
             return value
+
+    def copy(self):
+        return self.__class__(dict.copy(self))
