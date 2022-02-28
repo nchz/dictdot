@@ -6,7 +6,7 @@ long_description = description + "\n\n" + dictdot.dictdot.__doc__
 
 setup(
     name="dictdot",
-    version="1.3.0",
+    version="1.3.1",
     author="nchz",
     url="https://github.com/nchz/dictdot",
     description=description,

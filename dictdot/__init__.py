@@ -33,35 +33,40 @@ class dictdot(dict):
 
     # nested dicts are also dictdot.
     d = dictdot(
-        a={
-            "x": 0,
-            "y": 0,
-        },
-        b=[
-            {"w": 1},
-            {"z": 2},
-        ],
+        a={"x": 0},
+        b=[{"y": 1}],
     )
-    assert d["a"]["x"] == d.a.y
-    assert d.b[0].w == 1
-    assert d.b[0].z is None
-    assert d.b[1].z == 2
+    assert d.a.x == d.a["x"] == d["a"].x
+    assert d.b[0].y == d["b"][0]["y"]
+
+    # even when added after init. non-dict values are not modified.
+    d.c = [{"z": 2}, 2]
+    assert d.c[0].z == d.c[1]
+
+    # recursive dicts still work.
+    d.c.append(d)
+    assert d == d.c[-1] == d.c[-1].c[-1]
     """
 
     __getattr__ = dict.get
-    __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
+    def __setitem__(self, name, value):
+        return dict.__setitem__(self, name, self._add(value))
+
+    def __setattr__(self, name, value):
+        return self.__setitem__(name, value)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for k, v in self.items():
-            self[k] = self._nest(v)
+            self[k] = self._add(v)
 
-    def _nest(self, value):
+    def _add(self, value):
         if type(value) is dict:
             return self.__class__(value)
         elif type(value) in [list, tuple]:
-            return [self._nest(v) for v in value]
+            return [self._add(v) for v in value]
         else:
             return value
 
