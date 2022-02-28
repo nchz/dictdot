@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 import dictdot
 
 description = dictdot.__doc__
-long_description = description + "\n\n" + dictdot.dictdot.__doc__
+long_description = dictdot.dictdot.__doc__
 
 setup(
     name="dictdot",
-    version="1.4.0",
+    version="1.5.0",
     author="nchz",
     url="https://github.com/nchz/dictdot",
     description=description,
