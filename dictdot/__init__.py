@@ -1,4 +1,5 @@
 """Python dict accessible by dot."""
+import re
 
 
 class dictdot(dict):
@@ -46,10 +47,35 @@ class dictdot(dict):
     # recursive dicts still work.
     d.c.append(d)
     assert d == d.c[-1] == d.c[-1].c[-1]
+
+    # keys with not allowed characters may still be found with "_".
+    d["test-key"] = "hyphen"
+    assert d.test_key == "hyphen"
+    # order matters.
+    d["test.key"] = "dot"
+    assert d.test_key == "hyphen"
+    # but verbatim keys always win.
+    d["test_key"] = "underscore"
+    assert d.test_key == "underscore"
     """
 
-    __getattr__ = dict.get
     __delattr__ = dict.__delitem__
+
+    def __getattr__(self, name):
+        """
+        If `name` is not a verbatim key in `self`, try to find the first key
+        that matches a regex that considers "_"s in `name` as masking chars for
+        "." or "-", and "_" as well.
+        """
+        if name in self.keys():
+            return dict.get(self, name)
+        else:
+            pattern = re.compile(name.replace("_", r"[\.|\-|_]"))
+            keys = [k for k in self.keys() if pattern.findall(k)]
+            if len(keys) == 0:
+                return None
+            else:
+                return dict.get(self, keys[0])
 
     def __setitem__(self, name, value):
         return dict.__setitem__(self, name, self._add(value))
