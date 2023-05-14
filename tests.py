@@ -3,6 +3,30 @@ from io import BytesIO
 from dictdot import dictdot
 
 
+def test_find_keys_and_values():
+    a = ["foo", "bar", "baz"]
+    b = range(3)
+
+    d = dictdot(zip(a, b))
+    assert d.foo < d["bar"] < d.get("baz")
+
+    d.bar = {
+        "nested": 1,
+        "foo": None,
+        "nest": [None],
+    }
+
+    # Find every key equal to "foo".
+    assert list(dictdot.find(d, check_key="foo")) == [".foo", ".bar.foo"]
+
+    # Find every value equal to None.
+    assert list(dictdot.find(d, check_value=None)) == [".bar.foo", ".bar.nest[0]"]
+
+    # Both key and value must evaluate to True.
+    assert list(dictdot.find(d, check_key="foo", check_value=None)) == [".bar.foo"]
+    assert list(dictdot.find(d, check_key="bar", check_value=1)) == []
+
+
 def test_assignment_and_access():
     # Assign and get values either by key or attribute.
     d = dictdot()

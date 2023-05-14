@@ -129,6 +129,8 @@ class dictdot(dict):
                 )
         elif isinstance(it, (list, tuple)):
             for i, x in enumerate(it):
+                if prev and check_key(prev[-1]) and check_value(x):
+                    yield _build_path(*prev, i)
                 yield from dictdot.find(
                     x,
                     check_key=check_key,
@@ -136,9 +138,6 @@ class dictdot(dict):
                     prev=[*prev, i],
                     max_depth=max_depth,
                 )
-        else:
-            if check_value is not _true and check_value(it):
-                yield _build_path(*prev)
 
     # Methods to handle items.
 
