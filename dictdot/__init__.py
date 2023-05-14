@@ -10,6 +10,7 @@ def _is_valid_dot_key(s):
     """
     return (
         s
+        and type(s) is str
         and re.sub(r"\w", "", s) == ""
         and not s[0].isdigit()
         and s not in dictdot.__dict__
@@ -18,8 +19,7 @@ def _is_valid_dot_key(s):
 
 def _build_path(*args):
     """
-    Concatenate `args` to create a string that can be used to access a `dictdot`
-    (nested) element.
+    Concatenate `args` to create a valid "path" to access a `dictdot` element.
     """
     result = ""
     for x in args:
@@ -34,8 +34,7 @@ def _build_path(*args):
     return result
 
 
-def _true(*a, **kw):
-    """Just return True."""
+def _true(x):
     return True
 
 
