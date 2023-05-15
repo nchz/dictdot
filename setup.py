@@ -1,8 +1,10 @@
 from setuptools import setup, find_packages
-import dictdot
 
-description = dictdot.__doc__
-long_description = dictdot.dictdot.__doc__
+
+description = "Python dict accessible by dot."
+
+with open("README.md") as f:
+    long_description = f.read()
 
 setup(
     name="dictdot",
