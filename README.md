@@ -4,7 +4,7 @@ Python dict accessible by dot, similar to how it's done with [an object in Javas
 
 It provides the same nature of a `dict`, plus facilities in notation and a `find` functionality that helps in the data exploration process. Particularly useful when dealing with a large JSON that you don't know much about.
 
-It's implemented by overriding some builtin methods of regular Python `dict`, then it has no impact in performance or memory footprint. Nevertheless, for productive code it's always recommended to use the native Python dictionaries.
+Implemented by overriding some builtin methods of regular Python `dict`, it has no impact in performance or memory footprint.
 
 
 ## Usage
@@ -26,7 +26,7 @@ d.bar = [{"baz": 1}]
 assert type(d.bar[0]) is dictdot
 
 # Find elements by key or value.
-assert [".foo", ".bar[0].baz"] == list(dictdot.find(d, check_value=1))
+assert [".foo", ".bar[0].baz"] == list(d.find(value=1))
 ```
 
 
@@ -73,7 +73,7 @@ t = get_time(t)
 # Time: 5.53 sec
 
 print("Find values by function.")
-vs = list(dictdot.find(data, check_value=lambda v: type(v) is str and " dict " in v))
+vs = list(dictdot.find(data, value=lambda v: type(v) is str and " dict " in v))
 print(f"{len(vs)} values found.")
 t = get_time(t)
 # 2 values found.
@@ -144,13 +144,13 @@ assert data[1275].payload.commits[0].message is \
 - Function to find keys and values nested in the dict structure:
     ```python
     # Find every key equal to "foo".
-    assert list(dictdot.find(d, check_key="foo")) == [".foo"]
+    assert list(d.find(key="foo")) == [".foo"]
 
     # Find every value that bool-evaluates to False.
-    assert list(dictdot.find(d, check_value=lambda v: not v)) == [".foo", ".bar.boo"]
+    assert list(d.find(value=lambda v: not v)) == [".foo", ".bar.boo"]
 
     # Both key and value must evaluate to True.
-    assert list(dictdot.find(d, check_key="bar", check_value=1)) == []
+    assert list(d.find(key="bar", value=1)) == []
     ```
 
 See the [tests in the source code](https://github.com/nchz/dictdot/blob/master/tests.py) for more details about the behavior and usage.

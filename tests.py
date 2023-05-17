@@ -33,35 +33,36 @@ def data():
 
 
 def test_find_all_keys(data):
-    assert list(dictdot.find(data)) == [
-        ".foo",
-        ".bar",
-        ".bar.fee",
-        ".baz",
-        ".baz[0]",
-        ".baz[0].foo",
-        ".baz[0].bar",
+    assert list(data.find(build_paths=False)) == [
+        ("foo",),
+        ("bar",),
+        ("bar", "fee"),
+        ("baz",),
+        ("baz", 0),
+        ("baz", 0, "foo"),
+        ("baz", 0, "bar"),
     ]
 
 
 def test_find_keys_and_values(data):
     # Find every key equal to "foo".
-    assert list(dictdot.find(data, check_key="foo")) == [".foo", ".baz[0].foo"]
+    assert list(data.find(key="foo")) == [".foo", ".baz[0].foo"]
 
     # Find every value equal to 2.
-    assert list(dictdot.find(data, check_value=2)) == [".bar.fee", ".baz[0].bar"]
+    assert list(data.find(value=2)) == [".bar.fee", ".baz[0].bar"]
 
     # Both key and value must evaluate to True.
-    assert list(dictdot.find(data, check_key="bar", check_value=2)) == [".baz[0].bar"]
-    assert list(dictdot.find(data, check_key="bar", check_value=1)) == []
+    assert list(data.find(key="bar", value=2)) == [".baz[0].bar"]
+    assert list(data.find(key="bar", value=1)) == []
 
 
 def test_find_with_max_depth(data):
+    assert list(data.find(max_depth=0)) == []
     # Find every key equal to "foo" with depth at most 2.
     assert (
         [".foo"]
-        == list(dictdot.find(data, check_key="foo", max_depth=1))
-        == list(dictdot.find(data, check_key="foo", max_depth=2))
+        == list(data.find(key="foo", max_depth=1))
+        == list(data.find(key="foo", max_depth=2))
     )
 
 
@@ -96,9 +97,9 @@ def test_builtin_attributes(d):
     d.items = "foo"
     assert d["items"] != d.items
     assert hasattr(d.items, "__call__")
-    d._add = "bar"
-    assert d["_add"] != d._add
-    assert hasattr(d._add, "__call__")
+    d._convert = "bar"
+    assert d["_convert"] != d._convert
+    assert hasattr(d._convert, "__call__")
 
 
 def test_nested_dicts(data):
@@ -193,6 +194,6 @@ def test_is_valid_dot_key():
 
 
 def test_build_path():
-    assert _build_path("foo", "bar") == ".foo.bar"
-    assert _build_path("_add", 1, "bar") == '["_add"][1].bar'
-    assert _build_path('"quoted"', "'single'") == '["\\"quoted\\""]["\'single\'"]'
+    assert _build_path(["foo", "bar"]) == ".foo.bar"
+    assert _build_path(["_convert", 1, "bar"]) == '["_convert"][1].bar'
+    assert _build_path(['"quoted"', "'single'"]) == '["\\"quoted\\""]["\'single\'"]'

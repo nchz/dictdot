@@ -8,7 +8,7 @@ with open("README.md") as f:
 
 setup(
     name="dictdot",
-    version="1.5.1",
+    version="1.6.0",
     author="nchz",
     url="https://github.com/nchz/dictdot",
     description=description,

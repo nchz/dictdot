@@ -17,12 +17,12 @@ def _is_valid_dot_key(s):
     )
 
 
-def _build_path(*args):
+def _build_path(keys):
     """
-    Concatenate `args` to create a valid "path" to access a `dictdot` element.
+    Concatenate `keys` to create a valid "path" to access a `dictdot` element.
     """
     result = ""
-    for x in args:
+    for x in keys:
         if isinstance(x, str):
             if _is_valid_dot_key(x):
                 result += f".{x}"
@@ -34,11 +34,68 @@ def _build_path(*args):
     return result
 
 
-def _true(x):
+def _true(x, prev):
     return True
 
 
 _func = type(_true)
+
+
+def _find(it, *, key, value, max_depth=None, prev=None):
+    """
+    Recursively examine `it` and yield its (nested) paths that represent keys
+    and values that match the conditions defined by `key` and `value`,
+    respectively.
+
+    If `key` (or `value`) is an explicit function, it must accept 2 positional
+    arguments: the key (or value) being processed, and a tuple containing all
+    the keys processed so far. For example:
+
+        def is_odd(x, prev):
+            # Check if value is odd, and forget about the previous keys.
+            return type(x) is int and x % 2 == 1
+
+    You can use `prev` if your logic needs the parent keys of `x`.
+
+    If `key` (or `value`) is not a function, then it will be replaced by a
+    function that checks if its argument is equal to `key` (or `value`). Then,
+    `key="some_key"` is the same as `key=lambda x, _: x == "some_key"`.
+
+    Use `max_depth` to limit the length of the found paths.
+    """
+    if prev is None:
+        prev = []
+    if max_depth is not None and len(prev) >= max_depth:
+        return
+    if type(key) is not _func:
+        _key = key
+        key = lambda x, _: x == _key
+    if type(value) is not _func:
+        _value = value
+        value = lambda x, _: x == _value
+
+    if isinstance(it, dict):
+        for k, v in it.items():
+            if key(k, prev) and value(v, prev):
+                yield (*prev, k)
+            yield from _find(
+                v,
+                key=key,
+                value=value,
+                max_depth=max_depth,
+                prev=(*prev, k),
+            )
+    elif isinstance(it, (list, tuple)):
+        for i, x in enumerate(it):
+            if key(i, prev) and value(x, prev):
+                yield (*prev, i)
+            yield from _find(
+                x,
+                key=key,
+                value=value,
+                max_depth=max_depth,
+                prev=(*prev, i),
+            )
 
 
 # Main class.
@@ -59,14 +116,14 @@ class dictdot(dict):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for k, v in self.items():
-            self[k] = self._add(v)
+            self[k] = self._convert(v)
 
-    def _add(self, value):
+    def _convert(self, value):
         """Convert dicts nested in `value` into `dictdot`."""
         if isinstance(value, dict):
             return self.__class__(value)
         elif isinstance(value, (list, tuple)):
-            return [self._add(v) for v in value]
+            return [self._convert(v) for v in value]
         else:
             return value
 
@@ -81,68 +138,31 @@ class dictdot(dict):
     def _as_dict_recursive(value):
         if isinstance(value, dictdot):
             return {k: dictdot._as_dict_recursive(v) for k, v in value.items()}
-        elif isinstance(value, list):
+        elif isinstance(value, (list, tuple)):
             return [dictdot._as_dict_recursive(v) for v in value]
         else:
             return value
 
-    @staticmethod
-    def find(it, *, max_depth=0, check_key=_true, check_value=_true, prev=None):
+    def find(self, *, max_depth=None, key=_true, value=_true, build_paths=True):
         """
-        Recursively examine `it` and yield its (nested) paths that contain keys
-        and values that return True when passed as arguments to the functions
-        `check_key` and `check_value`, respectively. The "paths" found by this
-        function are returned as strings, hence they are not meant to be used
-        programatically.
+        The `_find` function bound to the `dictdot` class. For details about
+        the find functionality, try this:
+        >>> from dictdot import _find; help(_find)
 
-        By default `check_key` and `check_value` always return True.
-
-        If `check_key` (or `check_value`) is an explicit function, then it will
-        be applied to each key (or value).
-
-        If `check_key` (or `check_value`) is not a function, then it will be
-        replaced by a function that checks that the passed argument is equal to
-        the proived `check_key` (or `check_value`). Then, `check_key="3.14"` is
-        a shortcut for `check_key=lambda x: x == "3.14"`.
+        By default, paths are built into strings that are syntactically valid
+        to access `self` by dot notation. If `build_paths` is False, then yield
+        tuples containing the key names for each path.
         """
-        if prev is None:
-            prev = []
-        if max_depth and len(prev) >= max_depth:
-            return
-        if type(check_key) != _func:
-            _key = check_key
-            check_key = lambda x: x == _key
-        if type(check_value) != _func:
-            _value = check_value
-            check_value = lambda x: x == _value
-
-        if isinstance(it, dict):
-            for k, v in it.items():
-                if check_key(k) and check_value(v):
-                    yield _build_path(*prev, k)
-                yield from dictdot.find(
-                    v,
-                    check_key=check_key,
-                    check_value=check_value,
-                    prev=[*prev, k],
-                    max_depth=max_depth,
-                )
-        elif isinstance(it, (list, tuple)):
-            for i, x in enumerate(it):
-                if prev and check_key(prev[-1]) and check_value(x):
-                    yield _build_path(*prev, i)
-                yield from dictdot.find(
-                    x,
-                    check_key=check_key,
-                    check_value=check_value,
-                    prev=[*prev, i],
-                    max_depth=max_depth,
-                )
+        gen = _find(self, key=key, value=value, max_depth=max_depth)
+        if build_paths:
+            yield from map(_build_path, gen)
+        else:
+            yield from gen
 
     # Methods to handle items.
 
     def __setitem__(self, name, value):
-        return super().__setitem__(name, self._add(value))
+        return super().__setitem__(name, self._convert(value))
 
     def __setattr__(self, name, value):
         return self.__setitem__(name, value)
